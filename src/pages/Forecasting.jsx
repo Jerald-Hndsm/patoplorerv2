@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 
 const Forecasting = () => {
@@ -6,6 +6,22 @@ const Forecasting = () => {
   const [error, setError] = useState('');
   const [forecastedEggs, setForecastedEggs] = useState(null);
 
+  // Load data from localStorage when the component mounts
+  useEffect(() => {
+    const storedData = localStorage.getItem('csvData');
+    if (storedData) {
+      setData(JSON.parse(storedData));
+    }
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (data.length > 0) {
+      localStorage.setItem('csvData', JSON.stringify(data));
+    }
+  }, [data]);
+
+  // Handle file upload
   const handleFileUpload = (e) => {
     e.preventDefault();
     const file = e.target.files[0];
@@ -23,6 +39,7 @@ const Forecasting = () => {
     }
   };
 
+  // Handle drag and drop file
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -61,8 +78,15 @@ const Forecasting = () => {
     setForecastedEggs(totalEggs + Math.floor(Math.random() * 100)); // Simulate forecast
   };
 
+  // Remove the uploaded data and clear from localStorage
+  const handleRemoveData = () => {
+    setData([]);
+    setForecastedEggs(null);
+    localStorage.removeItem('csvData');
+  };
+
   return (
-    <div className="p-8">
+    <div className="p-8 h-full">
       <h2 className="text-2xl mb-4">Forecasting</h2>
       <div
         className="border-dashed border-4 border-gray-300 p-8 rounded-lg mb-4 cursor-pointer"
@@ -81,51 +105,63 @@ const Forecasting = () => {
           <span className="text-blue-500">or click to upload</span>
         </label>
       </div>
+
       {error && <p className="text-red-500">{error}</p>}
 
-      <div className="mb-4">
-        <h3 className="text-xl mb-2">Uploaded Data:</h3>
-        <div className="max-h-96 overflow-y-auto border border-gray-300 rounded-lg">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {data[0] && Object.keys(data[0]).map((key) => (
-                  <th key={key} className="border border-gray-300 p-2 bg-gray-100">{key}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  {Object.entries(row).map(([colKey, value], idx) => (
-                    <td
-                      key={idx}
-                      className="border border-gray-300 p-2"
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => handleEdit(rowIndex, colKey, e.target.textContent)}
-                    >
-                      {value}
-                    </td>
+      {data.length > 0 && (
+        <>
+          <div className="mb-4 h-60 overflow-y-auto">
+            <h3 className="text-xl mb-2">Uploaded Data:</h3>
+            <div className="overflow-y-auto border border-gray-300 rounded-lg">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    {data[0] && Object.keys(data[0]).map((key) => (
+                      <th key={key} className="border border-gray-300 p-2 bg-gray-100">{key}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      {Object.entries(row).map(([colKey, value], idx) => (
+                        <td
+                          key={idx}
+                          className="border border-gray-300 p-2"
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => handleEdit(rowIndex, colKey, e.target.textContent)}
+                        >
+                          {value}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      <button
-        className="bg-green-500 text-white p-2 rounded"
-        onClick={forecastEggs}
-      >
-        Forecast Duck Eggs
-      </button>
+          <button
+            className="bg-green-500 text-white p-2 rounded mr-2"
+            onClick={forecastEggs}
+          >
+            Forecast Duck Eggs
+          </button>
 
-      {forecastedEggs !== null && (
-        <div className="mt-4">
-          <h3 className="text-lg text-blue-600">Forecasted Total Number of Duck Eggs: {forecastedEggs}</h3>
-        </div>
+          <button
+            className="bg-red-500 text-white p-2 rounded"
+            onClick={handleRemoveData}
+          >
+            Remove Data
+          </button>
+
+          {forecastedEggs !== null && (
+            <div className="mt-4">
+              <h3 className="text-lg text-blue-600">Forecasted Total Number of Duck Eggs: {forecastedEggs}</h3>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
